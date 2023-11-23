@@ -72,7 +72,9 @@ async def add_member(member_id:int):
     #2. Add new portfolio for member
     result = await asyncio.gather(
         # asyncio.create_task(put()),
-        asyncio.create_task(put(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/add_portfolio/{member_id}'))
+        # asyncio.create_task(put(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/add_portfolio/{member_id}'))
+        ## PBY: updated link with POST instead of PUT for add member
+        asyncio.create_task(post(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/add_member/{member_id}'))
     )
     response = result[1]
     if response.status_code!=200:
@@ -86,7 +88,9 @@ async def remove_member(member_id:int):
     #2. Delete new portfolio for member
     result = await asyncio.gather(
         # asyncio.create_task(put()),
-        asyncio.create_task(put(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}'))
+        # asyncio.create_task(put(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}'))
+        ## PBY: Updated link with DELETE instead of PUT for delete member
+        asyncio.create_task(put(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}'))
     )
     response = result[1]
     if response.status_code!=200:
