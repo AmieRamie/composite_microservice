@@ -126,7 +126,7 @@ async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: i
 ### MEMBERS ###
 # Put can update entries of the members DB. Takes in the member name and optional arguments for
 # portfolio value, member_name, and age
-@app.put("/api/composite/update_stock_price/{member_id}", response_model=non_pagination_model)
+@app.put("/api/composite/update_member/{member_id}", response_model=non_pagination_model)
 async def update_member(member_id: int, member_name = None, portfolio_value = None, age = None):
     # Find the updated member
     get_member = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
