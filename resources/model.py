@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pydantic import BaseModel
-from typing import List
+from typing import Optional, List
 
 class trade_quantity_model(BaseModel):
     num_shares: int
@@ -36,3 +36,16 @@ class non_pagination_model(BaseModel):
 
 class sql_query_str(BaseModel):
     query:str
+
+## MEMBERS SCHEMA ##
+## MEMBERS SCHEMA ##
+class MemberSchema(BaseModel):
+    member_name: str
+    portfolio_value: float
+    age: int
+
+class Member(MemberSchema):
+    id: Optional[int]
+
+    class Config:
+        orm_mode = True
