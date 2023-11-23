@@ -9,6 +9,7 @@ from typing import List
 import requests
 
 import asyncio
+import aiohttp
 import pandas as pd
 
 app = FastAPI()
@@ -16,6 +17,34 @@ app = FastAPI()
 def put(request_url):
     r = requests.put(request_url)
     return r.json()
+def delete(request_url):
+    r = requests.delete(request_url)
+    return r.json()
+
+async def fetch(session, url,request_type,return_json):
+    try:
+        if request_type == 'get':
+            async with session.get(url) as response:
+                status = response.status  # Synchronous, no await needed
+                json_data = await response.json()  if return_json else {} # Asynchronous, await needed
+                return status, json_data
+        elif request_type == 'put':
+            async with session.put(url) as response:
+                status = response.status  # Synchronous, no await needed
+                json_data = await response.json()  if return_json else {} # Asynchronous, await needed
+                return status, json_data
+        elif request_type == 'post':
+            async with session.post(url) as response:
+                status = response.status  # Synchronous, no await needed
+                json_data = await response.json()  if return_json else {} # Asynchronous, await needed
+                return status, json_data
+        elif request_type == 'delete':
+            async with session.delete(url) as response:
+                status = response.status  # Synchronous, no await needed
+                json_data = await response.json()  if return_json else {} # Asynchronous, await needed
+                return status, json_data
+    except Exception as e:
+        return str(e)
 
 @app.get("/")
 async def root():
@@ -37,7 +66,6 @@ async def buy_stock(member_id:int,item: trade_quantity_model):
     current_ticker_info = res.json()
     response = requests.post(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/{member_id}/buy_stock/{ticker}',json = {"num_shares":num_shares,"price_per_share":float(current_ticker_info['current_price'])})
     
-    #update the stock db with the current price TODO!!!
     
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -64,39 +92,39 @@ async def sell_stock(member_id:int,item: trade_quantity_model):
     else:
         return response.json()
 
-@app.post("/api/composite/add_member/{member_id}", response_model=non_pagination_model)
-async def add_member(member_id:int):
+@app.post("/api/composite/add_member/{member_name}", response_model=non_pagination_model)
+async def add_member(member_name:str):
     #SSO would have to send request to this endpoint
     
+    response = requests.post(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/add_member/{member_name}')
+    if response.status_code!=200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
+    member_id = response.json()['id']
+    response = requests.put(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/add_portfolio/{member_id}')
     #1. Add member with creds to member service !!!TODO!!!
     #2. Add new portfolio for member
-    result = await asyncio.gather(
-        # asyncio.create_task(put()),
-        # asyncio.create_task(put(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/add_portfolio/{member_id}'))
-        ## PBY: updated link with POST instead of PUT for add member
-        asyncio.create_task(post(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/add_member/{member_id}'))
-    )
-    response = result[1]
+
     if response.status_code!=200:
-        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+        raise HTTPException(status_code=response.status_code, detail="user already exists")
     else:
-        return response
+        return response.json()
 
 @app.delete("/api/composite/delete_member/{member_id}", response_model=non_pagination_model)
 async def remove_member(member_id:int):
     #1. Delete member with creds to member service !!!TODO!!!
     #2. Delete new portfolio for member
-    result = await asyncio.gather(
-        # asyncio.create_task(put()),
-        # asyncio.create_task(put(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}'))
-        ## PBY: Updated link with DELETE instead of PUT for delete member
-        asyncio.create_task(put(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}'))
-    )
-    response = result[1]
-    if response.status_code!=200:
-        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
-    else:
-        return response
+    urls = [(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}','delete',False),(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}','delete',True)]
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch(session, url[0],url[1],url[2]) for url in urls]
+        results = await asyncio.gather(*tasks)
+        print(results)
+
+        status_code = results[1][0]
+        json = results[1][1]
+        if status_code!=200:
+            raise HTTPException(status_code=status_code, detail='error with input')
+        else:
+            return json
 
 @app.put("/api/composite/update_stock_price/{ticker}", response_model=non_pagination_model)
 async def update_stock_price(ticker:str):
