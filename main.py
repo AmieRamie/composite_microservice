@@ -122,5 +122,33 @@ async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: i
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
     else:
         return response.json()
+
+### MEMBERS ###
+# Put can update entries of the members DB. Takes in the member name and optional arguments for
+# portfolio value, member_name, and age
+@app.put("/api/composite/update_stock_price/{member_id}", response_model=non_pagination_model)
+async def update_member(member_id: int, member_name = None, portfolio_value = None, age = None):
+    # Find the updated member
+    get_member = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
+    if get_member.status_code != 200:
+        raise HTTPException(status_code=get_member.status_code, detail=get_member.json()['error'])
+
+    member_update = get_member.json()
+    if member_name is not None:
+        member_update['member_name'] = member_name
+    if portfolio_value is not None:
+        member_update['portfolio_value'] = portfolio_value
+    if age is not None:
+        member_update['age'] = age
+
+    response = requests.put(
+        'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/update_member/',
+        json=member_update)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8011)
