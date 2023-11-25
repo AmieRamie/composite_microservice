@@ -228,7 +228,7 @@ async def update_stock_price(member_id: int):
 ## GET will return a member json when looking up the DB by member_name
 @app.get("/api/composite/member_name/{member_name}", response_model=Member)
 async def update_stock_price(member_name: str):
-    response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_name}/')
+    response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/member_name/{member_name}/')
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
     else:
