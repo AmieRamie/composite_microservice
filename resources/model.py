@@ -53,16 +53,18 @@ class Member(MemberSchema):
 
 ### STOCK SCHEMAS
 
-class SecuritiesModel(BaseModel):
-    ticker: str
-    current_price: float
+
 
 class InfoWatchlistModel(BaseModel):
     ticker: str
     current_price: float
-    perf_1_mo: float 
-    perf_3_mo: float 
-    perf_6_mo: float
-    perf_1_year: float 
-    year_min: float
-    year_max: float 
+    perf_1_mo: float | None = None
+    perf_3_mo: float | None = None
+    perf_6_mo: float | None = None
+    perf_1_year: float | None = None
+    year_min: float | None = None
+    year_max: float | None = None
+    
+class SecuritiesModel(BaseModel):
+    ticker: str
+    current_price: float
