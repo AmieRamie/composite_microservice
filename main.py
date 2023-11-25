@@ -131,7 +131,7 @@ async def remove_member(member_id:int):
 
 @app.get("/api/composite/get_security_price/{ticker}", response_model=SecuritiesModel)
 async def get_stock_price(ticker:str):
-    response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/{ticker}')
+    response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/{ticker}')
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -140,7 +140,7 @@ async def get_stock_price(ticker:str):
     
 @app.get("/api/composite/get_security_price/{ticker}/info_watchlist", response_model=InfoWatchlistModel)
 async def get_stock_infowatchlist(ticker:str):
-    response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/info_watchlist')
+    response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/info_watchlist')
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -151,7 +151,7 @@ async def get_stock_infowatchlist(ticker:str):
     
 @app.get("/api/composite/get_top_stocks_by_price/", response_model=List[SecuritiesModel])
 async def get_top_stocks_by_price(limit: int = 10, offset: int = 0):
-    response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/top_securities_by_price/?limit=' + str(limit) + "&offset" + str(offset))
+    response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/top_securities_by_price/?limit=' + str(limit) + "&offset" + str(offset))
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -162,9 +162,9 @@ async def get_top_stocks_by_price(limit: int = 10, offset: int = 0):
 async def get_custom_stock_search(query: str= None, limit: int = 10, offset: int = 0):
     if query != None:
         query = urllib.parse.quote_plus(query)
-        response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?query='+ query +'&limit=' + str(limit) + "&offset" + str(offset))
+        response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?query='+ query +'&limit=' + str(limit) + "&offset" + str(offset))
     else:
-        response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?limit=' + str(limit) + "&offset" + str(offset))
+        response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?limit=' + str(limit) + "&offset" + str(offset))
 
 
     if response.status_code!=200:
