@@ -109,7 +109,7 @@ async def add_member(member_name:str):
     else:
         return response.json()
 
-@app.delete("/api/composite/delete_member/{member_id}", response_model=SecuritiesModel)
+@app.delete("/api/composite/delete_member/{member_id}", response_model=non_pagination_model)
 async def remove_member(member_id:int):
     #1. Delete member with creds to member service !!!TODO!!!
     #2. Delete new portfolio for member
@@ -121,6 +121,7 @@ async def remove_member(member_id:int):
 
         status_code = results[1][0]
         json = results[1][1]
+        print(json)
         if status_code!=200:
             raise HTTPException(status_code=status_code, detail='error with input')
         else:
