@@ -1,10 +1,12 @@
-from fastapi import FastAPI, Response, HTTPException
+from fastapi import FastAPI, Response, HTTPException, Query
 from fastapi.responses import RedirectResponse
 
 import uvicorn
 
 
-from resources.model import non_pagination_model, pagination_model, trade_quantity_model, sql_query_str, PortfolioModel, SecuritiesModel, InfoWatchlistModel
+
+from resources.model import non_pagination_model, pagination_model, trade_quantity_model, sql_query_str, PortfolioModel, SecuritiesModel, InfoWatchlistModel, MemberSchema, Member
+
 from typing import List
 import requests
 import urllib
@@ -186,5 +188,103 @@ async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: i
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
     else:
         return response.json()
+
+### MEMBERS ###
+# Put can update entries of the members DB. Takes in the member name and optional arguments for
+# portfolio value, member_name, and age
+@app.put("/api/composite/update_member/{member_id}", response_model=non_pagination_model)
+async def update_member(member_id: int, member_name = None, portfolio_value = None, age = None):
+    # Find the updated member
+    get_member = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
+    if get_member.status_code != 200:
+        raise HTTPException(status_code=get_member.status_code, detail=get_member.json()['error'])
+
+    member_update = get_member.json()
+    if member_name is not None:
+        member_update['member_name'] = member_name
+    if portfolio_value is not None:
+        member_update['portfolio_value'] = portfolio_value
+    if age is not None:
+        member_update['age'] = age
+
+    response = requests.put(
+        'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/update_member/',
+        json=member_update)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+## GET will return a member json when looking up the DB by member_id
+@app.get("/api/composite/member_id/{member_id}", response_model=non_pagination_model)
+async def update_stock_price(member_id: int):
+    response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+## GET will return a member json when looking up the DB by member_name
+@app.get("/api/composite/member_name/{member_name}", response_model=non_pagination_model)
+async def update_stock_price(member_name: str):
+    response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_name}/')
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+## GET will return a list of members
+@app.get("/api/composite/all_members/", response_model=non_pagination_model)
+async def update_stock_price(offset: int = None, limit: int = None):
+    path = 'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/?'
+    if offset is not None:
+        path += f'offset={offset}&'
+    if limit is not None:
+        path += f'limit={limit}'
+
+    response = requests.get(path)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+
+## GET will return a member json with search parameters
+@app.get("/api/composite/search_members/", response_model=non_pagination_model)
+async def update_stock_price(offset: int = 0,
+                             limit: int = Query(default=10, le=100),
+                             member_name: str = None,
+                             age_gte: float = None,
+                             age_lt: float = None,
+                             portfolio_value_gte: float = None,
+                             portfolio_value_lt: float = None,
+                             sort_by: str = None,):
+    path = 'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/search/?'
+    if offset is not None:
+        path += f'offset={offset}&'
+    if limit is not None:
+        path += f'limit={limit}&'
+    if member_name is not None:
+        path += f'member_name={member_name}&'
+    if age_gte is not None:
+        path += f'age_gte={age_gte}&'
+    if age_lt is not None:
+        path += f'age_lt={age_lt}&'
+    if portfolio_value_gte is not None:
+        path += f'portfolio_value_gte={portfolio_value_gte}&'
+    if portfolio_value_lt is not None:
+        path += f'portfolio_value_lt={portfolio_value_lt}&'
+    if sort_by is not None:
+        path += f'sort_by={sort_by}'
+
+    response = requests.get(path)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+### END MEMBERS ###
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8011)
