@@ -49,3 +49,20 @@ class Member(MemberSchema):
 
     class Config:
         orm_mode = True
+
+
+### STOCK SCHEMAS
+
+class SecuritiesModel(BaseModel):
+    ticker: str
+    current_price: float
+
+class InfoWatchlistModel(BaseModel):
+    ticker: str
+    current_price: float
+    perf_1_mo: float | None = None
+    perf_3_mo: float | None = None
+    perf_6_mo: float | None = None
+    perf_1_year: float | None = None
+    year_min: float | None = None
+    year_max: float | None = None
