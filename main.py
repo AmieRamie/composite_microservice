@@ -4,10 +4,10 @@ from fastapi.responses import RedirectResponse
 import uvicorn
 
 
-from resources.model import non_pagination_model, pagination_model, trade_quantity_model, sql_query_str, PortfolioModel
+from resources.model import non_pagination_model, pagination_model, trade_quantity_model, sql_query_str, PortfolioModel, SecuritiesModel, InfoWatchlistModel
 from typing import List
 import requests
-
+import urllib
 import asyncio
 import aiohttp
 import pandas as pd
@@ -109,7 +109,7 @@ async def add_member(member_name:str):
     else:
         return response.json()
 
-@app.delete("/api/composite/delete_member/{member_id}", response_model=non_pagination_model)
+@app.delete("/api/composite/delete_member/{member_id}", response_model=SecuritiesModel)
 async def remove_member(member_id:int):
     #1. Delete member with creds to member service !!!TODO!!!
     #2. Delete new portfolio for member
@@ -126,15 +126,50 @@ async def remove_member(member_id:int):
         else:
             return json
 
-@app.put("/api/composite/update_stock_price/{ticker}", response_model=non_pagination_model)
-async def update_stock_price(ticker:str):
-    #Getting updated price for ticker from Lambda function microservice !!!REPLACE WITH STOCK MICROSERVICE ENDPOINT!!!
-    headers = {"x-api-key": "jHZjspQE0uA9tSL8eWwK5knja7tmnC81ekpOzGF8"}
-    response = requests.post('https://dph6awgc5h.execute-api.us-east-2.amazonaws.com/default/update_stock_info_containerized',json = {"ticker":ticker},headers = headers)
+@app.get("/api/composite/get_security_price/{ticker}", response_model=SecuritiesModel)
+async def get_stock_price(ticker:str):
+    response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/{ticker}')
+
     if response.status_code!=200:
-        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+        raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
     else:
         return response.json()
+    
+@app.get("/api/composite/get_security_price/{ticker}/info_watchlist", response_model=InfoWatchlistModel)
+async def get_stock_infowatchlist(ticker:str):
+    response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/info_watchlist')
+
+    if response.status_code!=200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
+    else:
+        print(response.json())
+        return response.json()
+    
+    
+@app.get("/api/composite/get_top_stocks_by_price/", response_model=List[SecuritiesModel])
+async def get_top_stocks_by_price(limit: int = 10, offset: int = 0):
+    response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/top_securities_by_price/?limit=' + str(limit) + "&offset" + str(offset))
+
+    if response.status_code!=200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
+    else:
+        return response.json()
+
+@app.get("/api/composite/custom_stock_search/", response_model=List[InfoWatchlistModel])
+async def get_custom_stock_search(query: str= None, limit: int = 10, offset: int = 0):
+    if query != None:
+        query = urllib.parse.quote_plus(query)
+        response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?query='+ query +'&limit=' + str(limit) + "&offset" + str(offset))
+    else:
+        response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?limit=' + str(limit) + "&offset" + str(offset))
+
+
+    if response.status_code!=200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
+    else:
+        return response.json()
+    
+    
 
 @app.get("/api/composite/get_portfolios/", response_model=pagination_model)
 async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: int = 0):
