@@ -219,6 +219,7 @@ async def update_member(member_id: int, member_name = None, portfolio_value = No
 @app.get("/api/composite/member_id/{member_id}", response_model=non_pagination_model)
 async def update_stock_price(member_id: int):
     response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
+    print(response)
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
     else:
