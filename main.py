@@ -1,10 +1,12 @@
-from fastapi import FastAPI, Response, HTTPException
+from fastapi import FastAPI, Response, HTTPException, Query
 from fastapi.responses import RedirectResponse
 
 import uvicorn
 
 
-from resources.model import non_pagination_model, pagination_model, trade_quantity_model, sql_query_str, PortfolioModel, SecuritiesModel, InfoWatchlistModel
+
+from resources.model import non_pagination_model, pagination_model, trade_quantity_model, sql_query_str, PortfolioModel, SecuritiesModel, InfoWatchlistModel, MemberSchema, Member
+
 from typing import List
 import requests
 import urllib
@@ -92,7 +94,7 @@ async def sell_stock(member_id:int,item: trade_quantity_model):
     else:
         return response.json()
 
-@app.post("/api/composite/add_member/{member_name}", response_model=non_pagination_model)
+@app.post("/api/composite/add_member/{member_name}", response_model=Member)
 async def add_member(member_name:str):
     #SSO would have to send request to this endpoint
     
@@ -109,7 +111,7 @@ async def add_member(member_name:str):
     else:
         return response.json()
 
-@app.delete("/api/composite/delete_member/{member_id}", response_model=SecuritiesModel)
+@app.delete("/api/composite/delete_member/{member_id}")
 async def remove_member(member_id:int):
     #1. Delete member with creds to member service !!!TODO!!!
     #2. Delete new portfolio for member
@@ -121,6 +123,7 @@ async def remove_member(member_id:int):
 
         status_code = results[1][0]
         json = results[1][1]
+        print(json)
         if status_code!=200:
             raise HTTPException(status_code=status_code, detail='error with input')
         else:
@@ -128,7 +131,7 @@ async def remove_member(member_id:int):
 
 @app.get("/api/composite/get_security_price/{ticker}", response_model=SecuritiesModel)
 async def get_stock_price(ticker:str):
-    response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/{ticker}')
+    response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/{ticker}')
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -137,7 +140,7 @@ async def get_stock_price(ticker:str):
     
 @app.get("/api/composite/get_security_price/{ticker}/info_watchlist", response_model=InfoWatchlistModel)
 async def get_stock_infowatchlist(ticker:str):
-    response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/info_watchlist')
+    response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/info_watchlist')
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -148,7 +151,7 @@ async def get_stock_infowatchlist(ticker:str):
     
 @app.get("/api/composite/get_top_stocks_by_price/", response_model=List[SecuritiesModel])
 async def get_top_stocks_by_price(limit: int = 10, offset: int = 0):
-    response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/top_securities_by_price/?limit=' + str(limit) + "&offset" + str(offset))
+    response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/top_securities_by_price/?limit=' + str(limit) + "&offset" + str(offset))
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -159,9 +162,9 @@ async def get_top_stocks_by_price(limit: int = 10, offset: int = 0):
 async def get_custom_stock_search(query: str= None, limit: int = 10, offset: int = 0):
     if query != None:
         query = urllib.parse.quote_plus(query)
-        response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?query='+ query +'&limit=' + str(limit) + "&offset" + str(offset))
+        response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?query='+ query +'&limit=' + str(limit) + "&offset" + str(offset))
     else:
-        response = requests.get(f'http://ec2-3-142-250-141.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?limit=' + str(limit) + "&offset" + str(offset))
+        response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?limit=' + str(limit) + "&offset" + str(offset))
 
 
     if response.status_code!=200:
@@ -185,5 +188,104 @@ async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: i
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
     else:
         return response.json()
+
+### MEMBERS ###
+# Put can update entries of the members DB. Takes in the member name and optional arguments for
+# portfolio value, member_name, and age
+@app.put("/api/composite/update_member/{member_id}", response_model=Member)
+async def update_member(member_id: int, member_name = None, portfolio_value = None, age = None):
+    # Find the updated member
+    get_member = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
+    if get_member.status_code != 200:
+        raise HTTPException(status_code=get_member.status_code, detail=get_member.json()['error'])
+
+    member_update = get_member.json()
+    if member_name is not None:
+        member_update['member_name'] = member_name
+    if portfolio_value is not None:
+        member_update['portfolio_value'] = portfolio_value
+    if age is not None:
+        member_update['age'] = age
+
+    response = requests.put(
+        'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/update_member/',
+        json=member_update)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+## GET will return a member json when looking up the DB by member_id
+@app.get("/api/composite/member_id/{member_id}", response_model=Member)
+async def update_stock_price(member_id: int):
+    response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
+    print(response)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+## GET will return a member json when looking up the DB by member_name
+@app.get("/api/composite/member_name/{member_name}", response_model=Member)
+async def update_stock_price(member_name: str):
+    response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/member_name/{member_name}/')
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+## GET will return a list of members
+@app.get("/api/composite/all_members/", response_model=List[Member])
+async def update_stock_price(offset: int = None, limit: int = None):
+    path = 'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/?'
+    if offset is not None:
+        path += f'offset={offset}&'
+    if limit is not None:
+        path += f'limit={limit}'
+
+    response = requests.get(path)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+
+## GET will return a member json with search parameters
+@app.get("/api/composite/search_members/", response_model=List[Member])
+async def update_stock_price(offset: int = 0,
+                             limit: int = Query(default=10, le=100),
+                             member_name: str = None,
+                             age_gte: float = None,
+                             age_lt: float = None,
+                             portfolio_value_gte: float = None,
+                             portfolio_value_lt: float = None,
+                             sort_by: str = None,):
+    path = 'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/search/?'
+    if offset is not None:
+        path += f'offset={offset}&'
+    if limit is not None:
+        path += f'limit={limit}&'
+    if member_name is not None:
+        path += f'member_name={member_name}&'
+    if age_gte is not None:
+        path += f'age_gte={age_gte}&'
+    if age_lt is not None:
+        path += f'age_lt={age_lt}&'
+    if portfolio_value_gte is not None:
+        path += f'portfolio_value_gte={portfolio_value_gte}&'
+    if portfolio_value_lt is not None:
+        path += f'portfolio_value_lt={portfolio_value_lt}&'
+    if sort_by is not None:
+        path += f'sort_by={sort_by}'
+
+    response = requests.get(path)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
+    else:
+        return response.json()
+
+### END MEMBERS ###
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8011)
