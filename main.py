@@ -94,7 +94,7 @@ async def sell_stock(member_id:int,item: trade_quantity_model):
     else:
         return response.json()
 
-@app.post("/api/composite/add_member/{member_name}", response_model=non_pagination_model)
+@app.post("/api/composite/add_member/{member_name}", response_model=Member)
 async def add_member(member_name:str):
     #SSO would have to send request to this endpoint
     
@@ -111,7 +111,7 @@ async def add_member(member_name:str):
     else:
         return response.json()
 
-@app.delete("/api/composite/delete_member/{member_id}", response_model=non_pagination_model)
+@app.delete("/api/composite/delete_member/{member_id}")
 async def remove_member(member_id:int):
     #1. Delete member with creds to member service !!!TODO!!!
     #2. Delete new portfolio for member
@@ -192,7 +192,7 @@ async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: i
 ### MEMBERS ###
 # Put can update entries of the members DB. Takes in the member name and optional arguments for
 # portfolio value, member_name, and age
-@app.put("/api/composite/update_member/{member_id}", response_model=non_pagination_model)
+@app.put("/api/composite/update_member/{member_id}", response_model=Member)
 async def update_member(member_id: int, member_name = None, portfolio_value = None, age = None):
     # Find the updated member
     get_member = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
@@ -216,7 +216,7 @@ async def update_member(member_id: int, member_name = None, portfolio_value = No
         return response.json()
 
 ## GET will return a member json when looking up the DB by member_id
-@app.get("/api/composite/member_id/{member_id}", response_model=non_pagination_model)
+@app.get("/api/composite/member_id/{member_id}", response_model=Member)
 async def update_stock_price(member_id: int):
     response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
     print(response)
@@ -226,7 +226,7 @@ async def update_stock_price(member_id: int):
         return response.json()
 
 ## GET will return a member json when looking up the DB by member_name
-@app.get("/api/composite/member_name/{member_name}", response_model=non_pagination_model)
+@app.get("/api/composite/member_name/{member_name}", response_model=Member)
 async def update_stock_price(member_name: str):
     response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_name}/')
     if response.status_code != 200:
@@ -235,7 +235,7 @@ async def update_stock_price(member_name: str):
         return response.json()
 
 ## GET will return a list of members
-@app.get("/api/composite/all_members/", response_model=non_pagination_model)
+@app.get("/api/composite/all_members/", response_model=List[Member])
 async def update_stock_price(offset: int = None, limit: int = None):
     path = 'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/?'
     if offset is not None:
@@ -251,7 +251,7 @@ async def update_stock_price(offset: int = None, limit: int = None):
 
 
 ## GET will return a member json with search parameters
-@app.get("/api/composite/search_members/", response_model=non_pagination_model)
+@app.get("/api/composite/search_members/", response_model=List[Member])
 async def update_stock_price(offset: int = 0,
                              limit: int = Query(default=10, le=100),
                              member_name: str = None,
