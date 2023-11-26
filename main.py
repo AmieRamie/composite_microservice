@@ -81,9 +81,9 @@ async def buy_stock(member_id:int,item: trade_quantity_model):
     response = requests.post('https://dph6awgc5h.execute-api.us-east-2.amazonaws.com/default/update_stock_info_containerized',json = {"ticker":ticker},headers = headers)
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
-    print(res.json())
+    print(response.json())
     #Using the updated price info and the number of shares bought of a given ticker to update the portfolio value for the member
-    current_ticker_info = res.json()
+    current_ticker_info = response.json()
     response = requests.post(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/{member_id}/buy_stock/{ticker}',json = {"num_shares":num_shares,"price_per_share":float(current_ticker_info['current_price'])})
     
     
@@ -102,9 +102,9 @@ async def sell_stock(member_id:int,item: trade_quantity_model):
     response = requests.post('https://dph6awgc5h.execute-api.us-east-2.amazonaws.com/default/update_stock_info_containerized',json = {"ticker":ticker},headers = headers)
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
-    print(res.json())
+    print(response.json())
     #Using the updated price info and the number of shares bought of a given ticker to update the portfolio value for the member
-    current_ticker_info = res.json()
+    current_ticker_info = response.json()
     response = requests.post(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/{member_id}/sell_stock/{ticker}',json = {"num_shares":num_shares,"price_per_share":float(current_ticker_info['current_price'])},headers = headers)
     
     if response.status_code!=200:

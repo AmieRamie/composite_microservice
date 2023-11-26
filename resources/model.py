@@ -4,7 +4,7 @@ from typing import Optional, List
 
 class trade_quantity_model(BaseModel):
     num_shares: int
-    price_per_share: float
+    ticker: str
     # class Config:
     #     orm_mode = True
 
