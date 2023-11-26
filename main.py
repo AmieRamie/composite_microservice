@@ -25,26 +25,43 @@ def delete(request_url):
     return r.json()
 
 async def fetch(session, url,request_type,return_json):
+    start = timeit.default_timer()
     try:
         if request_type == 'get':
             async with session.get(url) as response:
                 status = response.status  # Synchronous, no await needed
                 json_data = await response.json()  if return_json else {} # Asynchronous, await needed
+                end = timeit.default_timer()
+                print(f"Output of async call for url: {url} - ")
+                print(status, json_data)
+                print(f"Time taken: {end-start}")
                 return status, json_data
         elif request_type == 'put':
             async with session.put(url) as response:
                 status = response.status  # Synchronous, no await needed
                 json_data = await response.json()  if return_json else {} # Asynchronous, await needed
+                end = timeit.default_timer()
+                print(f"Output of async call for url: {url} - ")
+                print(status, json_data)
+                print(f"Time taken: {end-start}")
                 return status, json_data
         elif request_type == 'post':
             async with session.post(url) as response:
                 status = response.status  # Synchronous, no await needed
                 json_data = await response.json()  if return_json else {} # Asynchronous, await needed
+                end = timeit.default_timer()
+                print(f"Output of async call for url: {url} - ")
+                print(status, json_data)
+                print(f"Time taken: {end-start}")
                 return status, json_data
         elif request_type == 'delete':
             async with session.delete(url) as response:
                 status = response.status  # Synchronous, no await needed
                 json_data = await response.json()  if return_json else {} # Asynchronous, await needed
+                end = timeit.default_timer()
+                print(f"Output of async call for url: {url} - ")
+                print(status, json_data)
+                print(f"Time taken: {end-start}")
                 return status, json_data
     except Exception as e:
         return str(e)
@@ -119,15 +136,21 @@ async def add_member(member_name:str):
 @app.delete("/api/composite/delete_member_syncronous/{member_id}", response_model=non_pagination_model)
 async def delete_member_syncronous(member_id:str):
     #SSO would have to send request to this endpoint
-    start = timeit.default_timer()
+    start_1 = timeit.default_timer()
     response = requests.delete(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}')
+    print('JSON from member microservice:')
     print(response.json())
+    end = timeit.default_timer()
+    print(f"Time taken: {end-start_1}")
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
+    start_2 = timeit.default_timer()
     response = requests.delete(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}')
-    end = timeit.default_timer()
-    print(end-start)
+    print('JSON from portfolio microservice:')
     print(response.json())
+    end = timeit.default_timer()
+    print(f"Time taken: {end-start_2}")
+    print(f"Total Time taken: {end-start_1}")
     #1. Add member with creds to member service !!!TODO!!!
     #2. Add new portfolio for member
 
@@ -146,12 +169,11 @@ async def remove_member(member_id:int):
         tasks = [fetch(session, url[0],url[1],url[2]) for url in urls]
         results = await asyncio.gather(*tasks)
         end = timeit.default_timer()
-        print(end-start)
+        print(f"Total Time taken: {end-start}")
         print(results)
 
         status_code = results[1][0]
         json = results[1][1]
-        print(json)
         if status_code!=200:
             raise HTTPException(status_code=status_code, detail='error with input')
         else:
