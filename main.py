@@ -5,6 +5,7 @@ import uvicorn
 
 
 
+import timeit 
 from resources.model import non_pagination_model, pagination_model, trade_quantity_model, sql_query_str, PortfolioModel, SecuritiesModel, InfoWatchlistModel, MemberSchema, Member
 
 from typing import List
@@ -94,15 +95,39 @@ async def sell_stock(member_id:int,item: trade_quantity_model):
     else:
         return response.json()
 
-@app.post("/api/composite/add_member/{member_name}", response_model=Member)
+@app.post("/api/composite/add_member/{member_name}", response_model=non_pagination_model)
 async def add_member(member_name:str):
     #SSO would have to send request to this endpoint
-    
+    start = timeit.default_timer()
     response = requests.post(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/add_member/{member_name}')
+    print(response.json())
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
     member_id = response.json()['id']
     response = requests.put(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/add_portfolio/{member_id}')
+    end = timeit.default_timer()
+    print(end-start)
+    print(response.json())
+    #1. Add member with creds to member service !!!TODO!!!
+    #2. Add new portfolio for member
+
+    if response.status_code!=200:
+        raise HTTPException(status_code=response.status_code, detail="user already exists")
+    else:
+        return response.json()
+
+@app.delete("/api/composite/delete_member_syncronous/{member_id}", response_model=non_pagination_model)
+async def delete_member_syncronous(member_id:str):
+    #SSO would have to send request to this endpoint
+    start = timeit.default_timer()
+    response = requests.delete(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}')
+    print(response.json())
+    if response.status_code!=200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
+    response = requests.delete(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}')
+    end = timeit.default_timer()
+    print(end-start)
+    print(response.json())
     #1. Add member with creds to member service !!!TODO!!!
     #2. Add new portfolio for member
 
@@ -117,8 +142,11 @@ async def remove_member(member_id:int):
     #2. Delete new portfolio for member
     urls = [(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}','delete',False),(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}','delete',True)]
     async with aiohttp.ClientSession() as session:
+        start = timeit.default_timer()
         tasks = [fetch(session, url[0],url[1],url[2]) for url in urls]
         results = await asyncio.gather(*tasks)
+        end = timeit.default_timer()
+        print(end-start)
         print(results)
 
         status_code = results[1][0]
