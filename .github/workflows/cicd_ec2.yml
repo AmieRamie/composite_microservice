@@ -18,7 +18,7 @@ jobs:
         DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
     - name: Build the Docker image
-      run: docker build -t composite_microservice_container_ec2 .
+      run: docker build -t aramesh23/composite_microservice_container_ec2 .
     - name: List Docker images
       run: docker images
     - name: Push to Dockerhub
