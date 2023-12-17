@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
     - name: Login Dockerhub
       env:
         DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
@@ -23,3 +24,23 @@ jobs:
       run: docker images
     - name: Push to Dockerhub
       run: docker push aramesh23/composite_microservice_container_ec2:latest
+
+    - name: Setup SSH and SCP to EC2 instance
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} "\
+        CONTAINER_ID=\$(sudo docker ps -q --filter ancestor=aramesh23/composite_microservice_container_ec2:latest) && \
+        if [ -n \"\$CONTAINER_ID\" ]; then \
+          sudo docker stop \$CONTAINER_ID && \
+          sudo docker rm \$CONTAINER_ID; \
+        fi && \
+        sudo docker pull aramesh23/composite_microservice_container_ec2:latest && \
+        if ! nc -z localhost 8011; then \
+          sudo docker run -d -p 8011:8011 aramesh23/composite_microservice_container_ec2:latest; \
+        else \
+          echo 'Port 8011 is already in use'; \
+        fi"
