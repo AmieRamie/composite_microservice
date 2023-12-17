@@ -20,4 +20,4 @@ jobs:
     - name: Build the Docker image
       run: docker build -t composite_microservice_container_ec2 .
     - name: Push to Dockerhub
-      run: docker push AmieRamie/composite_microservice_container_ec2:latest
+      run: docker push aramesh23/composite_microservice_container_ec2:latest
