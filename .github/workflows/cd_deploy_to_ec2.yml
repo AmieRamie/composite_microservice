@@ -28,7 +28,7 @@ jobs:
         fi && \
         sudo docker pull aramesh23/composite_microservice_container_ec2:latest && \
         if ! nc -z localhost 8011; then \
-          sudo docker run -d -p 8011:80 aramesh23/composite_microservice_container_ec2:latest; \
+          sudo docker run -d -p 8011:8011 aramesh23/composite_microservice_container_ec2:latest; \
         else \
           echo 'Port 8011 is already in use'; \
         fi"

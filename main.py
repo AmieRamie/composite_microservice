@@ -68,7 +68,7 @@ async def fetch(session, url,request_type,return_json):
 
 @app.get("/")
 async def root():
-    return {'message':'This works! Without dividends the stock market is a ponzi scheme with extra steps'}
+    return {'message':'This works!'} #Without dividends the stock market is a ponzi scheme with extra steps
 
 @app.post("/api/composite/{member_id}/buy_stock/", response_model=non_pagination_model)
 async def buy_stock(member_id:int,item: trade_quantity_model):
