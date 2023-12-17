@@ -68,7 +68,7 @@ async def fetch(session, url,request_type,return_json):
 
 @app.get("/")
 async def root():
-    return {'message':'This works!'}
+    return {'message':'This works! And the stock market is ponzi scheme'}
 
 @app.post("/api/composite/{member_id}/buy_stock/", response_model=non_pagination_model)
 async def buy_stock(member_id:int,item: trade_quantity_model):
