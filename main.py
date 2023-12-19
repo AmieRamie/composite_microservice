@@ -245,7 +245,7 @@ async def remove_member_async_reversed(member_id:int):
 
 @app.get("/api/composite/get_security_price/{ticker}", response_model=SecuritiesModel)
 async def get_stock_price(ticker:str):
-    response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/{ticker}')
+    response = requests.get(f'http://ec2-3-141-37-84.us-east-2.compute.amazonaws.com:8015/securities/{ticker}')
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -254,7 +254,7 @@ async def get_stock_price(ticker:str):
     
 @app.get("/api/composite/get_infowatchlist/{ticker}", response_model=InfoWatchlistModel)
 async def get_stock_infowatchlist(ticker:str):
-    response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/info_watchlist')
+    response = requests.get(f'http://ec2-3-141-37-84.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/info_watchlist')
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -265,7 +265,7 @@ async def get_stock_infowatchlist(ticker:str):
     
 @app.get("/api/composite/get_top_stocks_by_price/", response_model=List[SecuritiesModel])
 async def get_top_stocks_by_price(limit: int = 10, offset: int = 0):
-    response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/top_securities_by_price/?limit=' + str(limit) + "&offset" + str(offset))
+    response = requests.get(f'http://ec2-3-141-37-84.us-east-2.compute.amazonaws.com:8015/top_securities_by_price/?limit=' + str(limit) + "&offset" + str(offset))
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -276,9 +276,9 @@ async def get_top_stocks_by_price(limit: int = 10, offset: int = 0):
 async def get_custom_stock_search(query: str= None, limit: int = 10, page: int = 0):
     if query != None:
         query = urllib.parse.quote_plus(query)
-        response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?query='+ query +'&limit=' + str(limit) + "&page=" + str(page))
+        response = requests.get(f'http://ec2-3-141-37-84.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?query='+ query +'&limit=' + str(limit) + "&page=" + str(page))
     else:
-        response = requests.get(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?limit=' + str(limit) + "&page=" + str(page))
+        response = requests.get(f'http://ec2-3-141-37-84.us-east-2.compute.amazonaws.com:8015/securities/custom_security_search/?limit=' + str(limit) + "&page=" + str(page))
 
 
     if response.status_code!=200:
@@ -288,7 +288,7 @@ async def get_custom_stock_search(query: str= None, limit: int = 10, page: int =
     
 @app.put("/api/composite/update_security_price/{ticker}", response_model = SecuritiesModel)
 async def update_security_price(ticker:str):
-    response = requests.put(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/update_security_price')
+    response = requests.put(f'http://ec2-3-141-37-84.us-east-2.compute.amazonaws.com:8015/securities/update_security_price/{ticker}')
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -297,7 +297,7 @@ async def update_security_price(ticker:str):
 
 @app.delete("/api/composite/delete_security/{ticker}")
 async def delete_stock(ticker:str):
-    response = requests.delete(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/delete_security')
+    response = requests.delete(f'http://ec2-3-141-37-84.us-east-2.compute.amazonaws.com:8015/securities/delete_security/{ticker}')
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -307,7 +307,7 @@ async def delete_stock(ticker:str):
 @app.post("/api/composite/add_security/{ticker}")
 async def add_stock(ticker:str, current_price: float = 0):
     current_price = round(current_price, 2)
-    response = requests.post(f'http://ec2-18-222-118-35.us-east-2.compute.amazonaws.com:8015/securities/{ticker}/add_security?current_price=' + str(current_price))
+    response = requests.post(f'http://ec2-3-141-37-84.us-east-2.compute.amazonaws.com:8015/securities/add_security/{ticker}?current_price=' + str(current_price))
 
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
