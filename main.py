@@ -6,7 +6,7 @@ import uvicorn
 
 
 import timeit 
-from resources.model import non_pagination_model, pagination_model, trade_quantity_model, sql_query_str, PortfolioModel, SecuritiesModel, InfoWatchlistModel, MemberSchema, Member
+from resources.model import non_pagination_model, pagination_model, trade_quantity_model, sql_query_str, PortfolioModel, SecuritiesModel, InfoWatchlistModel, MemberSchema, Member,non_pagination_model_w_time
 
 from typing import List
 import requests
@@ -35,7 +35,7 @@ async def fetch(session, url,request_type,return_json):
                 print(f"Output of async call for url: {url} - ")
                 print(status, json_data)
                 print(f"Time taken: {end-start}")
-                return status, json_data
+                return status, json_data,end-start
         elif request_type == 'put':
             async with session.put(url) as response:
                 status = response.status  # Synchronous, no await needed
@@ -44,7 +44,7 @@ async def fetch(session, url,request_type,return_json):
                 print(f"Output of async call for url: {url} - ")
                 print(status, json_data)
                 print(f"Time taken: {end-start}")
-                return status, json_data
+                return status, json_data,end-start
         elif request_type == 'post':
             async with session.post(url) as response:
                 status = response.status  # Synchronous, no await needed
@@ -53,7 +53,7 @@ async def fetch(session, url,request_type,return_json):
                 print(f"Output of async call for url: {url} - ")
                 print(status, json_data)
                 print(f"Time taken: {end-start}")
-                return status, json_data
+                return status, json_data,end-start
         elif request_type == 'delete':
             async with session.delete(url) as response:
                 status = response.status  # Synchronous, no await needed
@@ -62,7 +62,7 @@ async def fetch(session, url,request_type,return_json):
                 print(f"Output of async call for url: {url} - ")
                 print(status, json_data)
                 print(f"Time taken: {end-start}")
-                return status, json_data
+                return status, json_data,end-start
     except Exception as e:
         return str(e)
 
@@ -84,7 +84,7 @@ async def buy_stock(member_id:int,item: trade_quantity_model):
     print(response.json())
     #Using the updated price info and the number of shares bought of a given ticker to update the portfolio value for the member
     current_ticker_info = response.json()
-    response = requests.post(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/{member_id}/buy_stock/{ticker}',json = {"num_shares":num_shares,"price_per_share":float(current_ticker_info['current_price'])})
+    response = requests.post(f'http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/{member_id}/buy_stock/{ticker}',json = {"num_shares":num_shares,"price_per_share":float(current_ticker_info['current_price'])})
     
     
     if response.status_code!=200:
@@ -105,7 +105,7 @@ async def sell_stock(member_id:int,item: trade_quantity_model):
     print(response.json())
     #Using the updated price info and the number of shares bought of a given ticker to update the portfolio value for the member
     current_ticker_info = response.json()
-    response = requests.post(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/{member_id}/sell_stock/{ticker}',json = {"num_shares":num_shares,"price_per_share":float(current_ticker_info['current_price'])},headers = headers)
+    response = requests.post(f'http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/{member_id}/sell_stock/{ticker}',json = {"num_shares":num_shares,"price_per_share":float(current_ticker_info['current_price'])},headers = headers)
     
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
@@ -121,7 +121,7 @@ async def add_member(member_name:str):
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
     member_id = response.json()['id']
-    response = requests.put(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/add_portfolio/{member_id}')
+    response = requests.put(f'http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/add_portfolio/{member_id}')
     end = timeit.default_timer()
     print(end-start)
     print(response.json())
@@ -133,7 +133,7 @@ async def add_member(member_name:str):
     else:
         return response.json()
 
-@app.delete("/api/composite/delete_member_syncronous/{member_id}", response_model=non_pagination_model)
+@app.delete("/api/composite/delete_member_syncronous/{member_id}")#response_model=non_pagination_model_w_time
 async def delete_member_syncronous(member_id:str):
     #SSO would have to send request to this endpoint
     start_1 = timeit.default_timer()
@@ -142,28 +142,33 @@ async def delete_member_syncronous(member_id:str):
     print(response.json())
     end = timeit.default_timer()
     print(f"Time taken: {end-start_1}")
+    member_remove_time = end-start_1
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
     start_2 = timeit.default_timer()
-    response = requests.delete(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}')
+    response = requests.delete(f'http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}')
     print('JSON from portfolio microservice:')
-    print(response.json())
+    # print(response.json())
     end = timeit.default_timer()
+    json = response.json()
     print(f"Time taken: {end-start_2}")
+    portfolio_remove_time = end-start_2
     print(f"Total Time taken: {end-start_1}")
     #1. Add member with creds to member service !!!TODO!!!
     #2. Add new portfolio for member
-
+    json['total_time_taken'] = end-start_1
+    json['member_remove_time_taken'] = member_remove_time
+    json['portfolio_remove_time_taken'] = portfolio_remove_time
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail="user already exists")
     else:
-        return response.json()
+        return json 
 
 @app.delete("/api/composite/delete_member/{member_id}")
 async def remove_member(member_id:int):
     #1. Delete member with creds to member service !!!TODO!!!
     #2. Delete new portfolio for member
-    urls = [(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}','delete',False),(f'http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}','delete',True)]
+    urls = [(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}','delete',False),(f'http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}','delete',True)]
     async with aiohttp.ClientSession() as session:
         start = timeit.default_timer()
         tasks = [fetch(session, url[0],url[1],url[2]) for url in urls]
@@ -171,9 +176,13 @@ async def remove_member(member_id:int):
         end = timeit.default_timer()
         print(f"Total Time taken: {end-start}")
         print(results)
-
+        member_remove_time = results[0][2]
+        portfolio_remove_time = results[1][2]
         status_code = results[1][0]
         json = results[1][1]
+        json['total_time_taken'] = end-start
+        json['member_remove_time_taken'] = member_remove_time
+        json['portfolio_remove_time_taken'] = portfolio_remove_time
         if status_code!=200:
             raise HTTPException(status_code=status_code, detail='error with input')
         else:
@@ -255,7 +264,7 @@ async def add_stock(ticker:str, current_price: float = 0):
 @app.get("/api/composite/get_portfolios/", response_model=pagination_model)
 async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: int = 0):
     print(query_str, limit, page)
-    request_url = f"http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/?"
+    request_url = f"http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/?"
     if (pd.notnull(query_str))&(query_str!=''):
         request_url = request_url + f"query_str={query_str}&"
     request_url = request_url + f"limit={limit}&"

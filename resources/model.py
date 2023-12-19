@@ -34,6 +34,12 @@ class pagination_model(BaseModel):
 class non_pagination_model(BaseModel):
     data: List[PortfolioModel]
 
+class non_pagination_model_w_time(BaseModel):
+    data: List[PortfolioModel]
+    total_time_taken: float
+    member_remove_time_taken: float
+    portfolio_remove_time_taken: float
+
 class sql_query_str(BaseModel):
     query:str
 
