@@ -24,7 +24,7 @@ jobs:
         pip install -r requirements.txt
     - name: Run Unit Tests
       run: |
-        pytest unit_tests.py
+        python unit_tests.py
 
     - name: Login Dockerhub
       env:
