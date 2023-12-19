@@ -164,8 +164,39 @@ async def delete_member_syncronous(member_id:str):
     else:
         return json 
 
-@app.delete("/api/composite/delete_member/{member_id}")
-async def remove_member(member_id:int):
+@app.delete("/api/composite/delete_member_syncronous_reversed/{member_id}")#response_model=non_pagination_model_w_time
+async def delete_member_syncronous_reversed(member_id:str):
+    #SSO would have to send request to this endpoint
+    start_1 = timeit.default_timer()
+    response = requests.delete(f'http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}')
+    print('JSON from portfolio microservice:')
+    print(response.json())
+    end = timeit.default_timer()
+    print(f"Time taken: {end-start_1}")
+    portfolio_remove_time = end-start_1
+    if response.status_code!=200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
+    start_2 = timeit.default_timer()
+    response_2 = requests.delete(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}')
+    print('JSON from member microservice:')
+    # print(response.json())
+    end = timeit.default_timer()
+    json = response.json()
+    print(f"Time taken: {end-start_2}")
+    member_remove_time = end-start_2
+    print(f"Total Time taken: {end-start_1}")
+    #1. Add member with creds to member service !!!TODO!!!
+    #2. Add new portfolio for member
+    json['total_time_taken'] = end-start_1
+    json['portfolio_remove_time_taken'] = portfolio_remove_time
+    json['member_remove_time_taken'] = member_remove_time
+    if response.status_code!=200:
+        raise HTTPException(status_code=response.status_code, detail="user already exists")
+    else:
+        return json 
+
+@app.delete("/api/composite/delete_member_async/{member_id}")
+async def remove_member_async(member_id:int):
     #1. Delete member with creds to member service !!!TODO!!!
     #2. Delete new portfolio for member
     urls = [(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}','delete',False),(f'http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}','delete',True)]
@@ -180,6 +211,30 @@ async def remove_member(member_id:int):
         portfolio_remove_time = results[1][2]
         status_code = results[1][0]
         json = results[1][1]
+        json['total_time_taken'] = end-start
+        json['member_remove_time_taken'] = member_remove_time
+        json['portfolio_remove_time_taken'] = portfolio_remove_time
+        if status_code!=200:
+            raise HTTPException(status_code=status_code, detail='error with input')
+        else:
+            return json
+
+@app.delete("/api/composite/delete_member_async_reversed/{member_id}")
+async def remove_member_async_reversed(member_id:int):
+    #1. Delete member with creds to member service !!!TODO!!!
+    #2. Delete new portfolio for member
+    urls = [(f'http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/delete_portfolio/{member_id}','delete',True),(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/remove_member/{member_id}','delete',False)]
+    async with aiohttp.ClientSession() as session:
+        start = timeit.default_timer()
+        tasks = [fetch(session, url[0],url[1],url[2]) for url in urls]
+        results = await asyncio.gather(*tasks)
+        end = timeit.default_timer()
+        print(f"Total Time taken: {end-start}")
+        print(results)
+        member_remove_time = results[1][2]
+        portfolio_remove_time = results[0][2]
+        status_code = results[0][0]
+        json = results[0][1]
         json['total_time_taken'] = end-start
         json['member_remove_time_taken'] = member_remove_time
         json['portfolio_remove_time_taken'] = portfolio_remove_time
