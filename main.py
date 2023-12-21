@@ -314,21 +314,32 @@ async def add_stock(ticker:str, current_price: float = 0):
     else:
         return response.json()
     
-    
-
-@app.post("/api/composite/update_portfolio_value/{member_id}")
+@app.get("/api/composite/get_portfolios/", response_model=pagination_model)
 async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: int = 0):
     print(query_str, limit, page)
-    request_url = f"http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015//api/portfolios/update_portfolio_value/{member_id}"
+    request_url = f"http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/?"
+    if (pd.notnull(query_str))&(query_str!=''):
+        request_url = request_url + f"query_str={query_str}&"
+    request_url = request_url + f"limit={limit}&"
+    request_url = request_url + f"page={page}"
+    print(request_url)
     response = requests.get(request_url)
     if response.status_code!=200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
     else:
         return response.json()
 
-@app.get("/api/composite/get_portfolios/", response_model=pagination_model)
-async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: int = 0):
+@app.post("/api/composite/update_portfolio_value/{member_id}")
+async def get_specific_portfolio(member_id:str):
+    print(query_str, limit, page)
+    request_url = f"http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/update_portfolio_value/{member_id}"
+    response = requests.get(request_url)
+    if response.status_code!=200:
+        raise HTTPException(status_code=response.status_code, detail=response.json()['detail'])
+    else:
+        return response.json()
 
+    
 ### MEMBERS ###
 # Put can update entries of the members DB. Takes in the member name and optional arguments for
 # portfolio value, member_name, and age
