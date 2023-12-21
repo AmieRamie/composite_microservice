@@ -316,7 +316,7 @@ async def add_stock(ticker:str, current_price: float = 0):
     
     
 
-@app.get("/api/composite/update_portfolio_value/{member_id}")
+@app.post("/api/composite/update_portfolio_value/{member_id}")
 async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: int = 0):
     print(query_str, limit, page)
     request_url = f"http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015//api/portfolios/update_portfolio_value/{member_id}"
@@ -357,7 +357,7 @@ async def update_member(member_id: int, member_name = None, portfolio_value = No
 
 ## GET will return a member json when looking up the DB by member_id
 @app.get("/api/composite/member_id/{member_id}", response_model=Member)
-async def update_stock_price(member_id: int):
+async def get_member_by_id(member_id: int):
     response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/id/{member_id}/')
     print(response)
     if response.status_code != 200:
@@ -367,7 +367,7 @@ async def update_stock_price(member_id: int):
 
 ## GET will return a member json when looking up the DB by member_name
 @app.get("/api/composite/member_name/{member_name}", response_model=Member)
-async def update_stock_price(member_name: str):
+async def get_member_by_name(member_name: str):
     response = requests.get(f'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/member_name/{member_name}/')
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json()['error'])
@@ -376,7 +376,7 @@ async def update_stock_price(member_name: str):
 
 ## GET will return a list of members
 @app.get("/api/composite/all_members/", response_model=List[Member])
-async def update_stock_price(offset: int = None, limit: int = None):
+async def get_all_members(offset: int = None, limit: int = None):
     path = 'http://members-docker-env.eba-wdqjeu7i.us-east-2.elasticbeanstalk.com/members/?'
     if offset is not None:
         path += f'offset={offset}&'
@@ -392,7 +392,7 @@ async def update_stock_price(offset: int = None, limit: int = None):
 
 ## GET will return a member json with search parameters
 @app.get("/api/composite/search_members/", response_model=List[Member])
-async def update_stock_price(offset: int = 0,
+async def search_members(offset: int = 0,
                              limit: int = Query(default=10, le=100),
                              member_name: str = None,
                              age_gte: float = None,
