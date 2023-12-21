@@ -317,7 +317,7 @@ async def add_stock(ticker:str, current_price: float = 0):
 @app.get("/api/composite/get_portfolios/", response_model=pagination_model)
 async def get_specific_portfolio(query_str: str = None, limit: int = 25, page: int = 0):
     print(query_str, limit, page)
-    request_url = f"http://ec2-13-58-213-131.us-east-2.compute.amazonaws.com:8015/api/portfolios/?"
+    request_url = f"http://ec2-18-216-11-210.us-east-2.compute.amazonaws.com:8015/api/portfolios/?"
     if (pd.notnull(query_str))&(query_str!=''):
         request_url = request_url + f"query_str={query_str}&"
     request_url = request_url + f"limit={limit}&"
